@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QApplication, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QWidget
-from PyQt6.QtGui import QMovie, QPixmap, QIcon
-from PyQt6.QtCore import Qt, QPoint
+from PyQt6.QtGui import QMovie, QPixmap, QIcon, QRegion
+from PyQt6.QtCore import Qt, QRect
 import sys
 
 class MainWindow(QWidget):
@@ -9,14 +9,21 @@ class MainWindow(QWidget):
         self.setWindowTitle("Ferg Timer")
         self.setGeometry(500, 500, 500, 500)
 
-        # Supprimer la barre de titre
+        # Supprimer la barre de titre et rendre la fenêtre transparente
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+
+        # === Feuille de fond ===
+        self.container = QWidget(self)  # Créer une feuille de fond
+        self.container.setStyleSheet("""
+            background-color: #2E3440;  /* Fond opaque */
+            border-radius: 20px;
+        """)
+        self.container.setGeometry(0, 0, 500, 500)  # Taille de la feuille
 
         # Affichage du GIF
-        self.gif_label = QLabel(self)
+        self.gif_label = QLabel(self.container)  # ⬅️ Placer sur la feuille
         movie = QMovie("assets/ferg.gif")
-        if not movie.isValid():
-            print("Erreur : Le GIF n'a pas pu être chargé.")
         self.gif_label.setMovie(movie)
         movie.start()
 
@@ -27,8 +34,8 @@ class MainWindow(QWidget):
         gif_layout.addStretch()
 
         # === Bouton avec image ===
-        self.button = QPushButton(self)
-        self.button.setFixedSize(100, 100)
+        self.button = QPushButton(self.container)  # ⬅️ Placer sur la feuille
+        self.button.setFixedSize(200, 200)
         self.button.setStyleSheet("border: none;")
 
         self.idle_image = "assets/start_button_idle.png"
@@ -39,23 +46,34 @@ class MainWindow(QWidget):
         self.button.pressed.connect(self.on_button_press)
         self.button.released.connect(self.on_button_release)
 
-        # Bouton de fermeture
-        self.close_button = QPushButton("X", self)
-        self.close_button.setFixedSize(40, 40)
-        self.close_button.setStyleSheet("background-color: red; color: white; font-size: 16px; border-radius: 20px;")
-        self.close_button.clicked.connect(self.close)
+        # === Bouton de fermeture avec une image ===
+        self.close_button = QPushButton(self.container)  # Placer sur la feuille
+        self.close_button.setFixedSize(40, 40)  # Adapter la taille
+        self.set_close_button_image("assets/close_button.png")  # Appliquer l’image
 
-        # Layout pour le bouton de fermeture
+        self.close_button.setStyleSheet("border: none;")  # Supprimer la bordure
+        self.close_button.clicked.connect(self.close)  # Fermer l'appli au clic
+
+        # === Bouton de réduction avec une image ===
+        self.reduce_button = QPushButton(self.container)
+        self.reduce_button.setFixedSize(40, 40)  # Taille du bouton
+        self.set_reduce_button_image("assets/reduce_button.png")  # Appliquer l’image
+
+        self.reduce_button.setStyleSheet("border: none;")  # Supprimer la bordure
+        self.reduce_button.clicked.connect(self.showMinimized)  # Réduire la fenêtre au clic
+
+        # Layout pour les boutons en haut à droite
         close_layout = QHBoxLayout()
-        close_layout.addStretch()
-        close_layout.addWidget(self.close_button)
+        close_layout.addStretch()  # Espace à gauche
+        close_layout.addWidget(self.reduce_button)  # Bouton de réduction
+        close_layout.addWidget(self.close_button)   # Bouton de fermeture
 
         # Mise en page principale
-        layout = QVBoxLayout()
-        layout.addLayout(close_layout)  # Ajoute le bouton de fermeture en haut
+        layout = QVBoxLayout(self.container)  # ⬅️ Appliquer au conteneur
+        layout.addLayout(close_layout)
         layout.addLayout(gif_layout)
         layout.addWidget(self.button, alignment=Qt.AlignmentFlag.AlignHCenter)
-        self.setLayout(layout)
+        self.container.setLayout(layout)  # ⬅️ Fixer la mise en page au conteneur
 
     def set_button_image(self, image_path):
         pixmap = QPixmap(image_path)
@@ -71,23 +89,26 @@ class MainWindow(QWidget):
 
     # === Déplacement de la fenêtre ===
     def mousePressEvent(self, event):
-        """ Capture la position de la souris """
         if event.button() == Qt.MouseButton.LeftButton:
             self.drag_pos = event.globalPosition().toPoint()
 
     def mouseMoveEvent(self, event):
-        """ Déplace la fenêtre quand la souris bouge """
         if event.buttons() == Qt.MouseButton.LeftButton:
             self.move(self.pos() + event.globalPosition().toPoint() - self.drag_pos)
             self.drag_pos = event.globalPosition().toPoint()
 
     def keyPressEvent(self, event):
-        """ Fermer la fenêtre avec Échap """
         if event.key() == Qt.Key.Key_Escape:
             self.close()
 
-# Lancer l'application
-app = QApplication(sys.argv)
-window = MainWindow()
-window.show()
-sys.exit(app.exec())
+    def set_close_button_image(self, image_path):
+        pixmap = QPixmap(image_path)
+        icon = QIcon(pixmap)
+        self.close_button.setIcon(icon)
+        self.close_button.setIconSize(self.close_button.size())  # Adapter à la taille
+
+    def set_reduce_button_image(self, image_path):
+        pixmap = QPixmap(image_path)
+        icon = QIcon(pixmap)
+        self.reduce_button.setIcon(icon)
+        self.reduce_button.setIconSize(self.reduce_button.size())  # Adapter l’icône à la taille
