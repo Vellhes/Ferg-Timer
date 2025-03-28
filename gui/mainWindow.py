@@ -1,13 +1,15 @@
-from PyQt6.QtWidgets import QApplication, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QWidget
+from PyQt6.QtWidgets import QHBoxLayout, QApplication, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QWidget
 from PyQt6.QtGui import QMovie, QPixmap, QIcon, QRegion
 from PyQt6.QtCore import Qt, QRect
 import sys
+
+from gui.TimerDigit import TimerDigit
 
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Ferg Timer")
-        self.setGeometry(500, 500, 500, 500)
+        self.setGeometry(400, 400, 600, 600)
 
         # Supprimer la barre de titre et rendre la fenêtre transparente
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
@@ -19,7 +21,7 @@ class MainWindow(QWidget):
             background-color: #2E3440;  /* Fond opaque */
             border-radius: 20px;
         """)
-        self.container.setGeometry(0, 0, 500, 500)  # Taille de la feuille
+        self.container.setGeometry(0, 0, 600, 600)  # Taille de la feuille
 
         # Affichage du GIF
         self.gif_label = QLabel(self.container)  # ⬅️ Placer sur la feuille
@@ -68,12 +70,33 @@ class MainWindow(QWidget):
         close_layout.addWidget(self.reduce_button)  # Bouton de réduction
         close_layout.addWidget(self.close_button)   # Bouton de fermeture
 
+        # === Layout horizontal pour les chiffres ===
+        digits_layout = QHBoxLayout()
+        self.h1 = TimerDigit("assets/digits/0.png")  # Heure 1
+        self.h2 = TimerDigit("assets/digits/0.png")  # Heure 2
+        self.m1 = TimerDigit("assets/digits/0.png")  # Minute 1
+        self.m2 = TimerDigit("assets/digits/0.png")  # Minute 2
+
+        # colon_label = QLabel(self)  # Image pour les deux points ":"
+        # colon_label.setPixmap(QPixmap("assets/colon.png"))
+        # colon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        # Ajout des éléments dans le layout
+        digits_layout.addWidget(self.h1)
+        digits_layout.addWidget(self.h2)
+        #digits_layout.addWidget(colon_label)
+        digits_layout.addWidget(self.m1)
+        digits_layout.addWidget(self.m2)
+
         # Mise en page principale
-        layout = QVBoxLayout(self.container)  # ⬅️ Appliquer au conteneur
-        layout.addLayout(close_layout)
-        layout.addLayout(gif_layout)
-        layout.addWidget(self.button, alignment=Qt.AlignmentFlag.AlignHCenter)
+        layout = QVBoxLayout()
+        layout.addLayout(close_layout)  # Boutons de fermeture et réduction
+        layout.addLayout(gif_layout)    # GIF
+        layout.addLayout(digits_layout) # Digits (H1 H2 : M1 M2)
+        layout.addWidget(self.button, alignment=Qt.AlignmentFlag.AlignHCenter)  # Bouton Start centré en dessous
+
         self.container.setLayout(layout)  # ⬅️ Fixer la mise en page au conteneur
+
 
     def set_button_image(self, image_path):
         pixmap = QPixmap(image_path)
